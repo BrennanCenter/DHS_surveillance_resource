@@ -22,7 +22,6 @@
 
 body {
   font-family: "Benton", Helvetica, Arial, sans-serif;
-  margin: 32px;
   color: #000;
   background: #fff;
 }
@@ -2108,6 +2107,21 @@ window.addEventListener("resize", updateStickyOffsets);
 window.addEventListener("load", updateStickyOffsets);
 
 loadInitialData();
+
+
+function sendHeight() {
+  const height = document.documentElement.scrollHeight;
+  parent.postMessage({
+    type: "resize-table",
+    height
+  }, "*");
+}
+
+window.addEventListener("load", sendHeight);
+window.addEventListener("resize", sendHeight);
+
+new ResizeObserver(sendHeight).observe(document.body);
+
 </script>
 
 </body>
