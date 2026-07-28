@@ -1540,12 +1540,7 @@ function fetchCSV(file) {
 }
 
 function normalizeText(value) {
-  return String(value || "")
-    /* Repair common quote corruption from CSV exports. */
-    .replace(/â€œ|â€|“|”/g, '"')
-    .replace(/â€˜|â€™|‘|’/g, "'")
-    .replace(/�/g, '"')
-    .trim();
+  return String(value || "").trim();
 }
 
 function normalizeHeaderName(value) {
@@ -1873,65 +1868,34 @@ function applyFootnotesToElement(element, footnotes = []) {
       }
     );
 
-    const textNodes = [];
-    let combinedText = "";
     let textNode;
-
     while ((textNode = walker.nextNode())) {
-      const value = textNode.nodeValue || "";
+      const text = textNode.nodeValue || "";
+      const index = text.toLowerCase().indexOf(phrase.toLowerCase());
+      if (index === -1) continue;
 
-      textNodes.push({
-        node: textNode,
-        start: combinedText.length,
-        end: combinedText.length + value.length
-      });
+      const before = text.slice(0, index + phrase.length);
+      const after = text.slice(index + phrase.length);
+      const fragment = document.createDocumentFragment();
 
-      combinedText += value;
-    }
+      fragment.appendChild(document.createTextNode(before));
 
-    const phraseStart = combinedText
-      .toLowerCase()
-      .indexOf(phrase.toLowerCase());
+      const marker = document.createElement("sup");
+      marker.className = "footnote-marker";
+      marker.textContent = footnote.number;
+      marker.setAttribute("aria-label", `Footnote ${footnote.number}`);
+      fragment.appendChild(marker);
 
-    if (phraseStart === -1) {
-      console.warn(
-        "Footnote phrase not found:",
-        footnote.number,
-        footnote.precedingPhrase
-      );
+      fragment.appendChild(document.createTextNode(after));
+      textNode.parentNode.replaceChild(fragment, textNode);
       return;
     }
 
-    const phraseEnd = phraseStart + phrase.length;
-    const endingTextNode = textNodes.find(item =>
-      phraseEnd > item.start && phraseEnd <= item.end
+    console.warn(
+      "Footnote phrase not found:",
+      footnote.number,
+      footnote.precedingPhrase
     );
-
-    if (!endingTextNode) {
-      console.warn(
-        "Footnote phrase endpoint not found:",
-        footnote.number,
-        footnote.precedingPhrase
-      );
-      return;
-    }
-
-    const localOffset = phraseEnd - endingTextNode.start;
-    const node = endingTextNode.node;
-    const before = (node.nodeValue || "").slice(0, localOffset);
-    const after = (node.nodeValue || "").slice(localOffset);
-    const fragment = document.createDocumentFragment();
-
-    fragment.appendChild(document.createTextNode(before));
-
-    const marker = document.createElement("sup");
-    marker.className = "footnote-marker";
-    marker.textContent = footnote.number;
-    marker.setAttribute("aria-label", `Footnote ${footnote.number}`);
-    fragment.appendChild(marker);
-
-    fragment.appendChild(document.createTextNode(after));
-    node.parentNode.replaceChild(fragment, node);
   });
 }
 
