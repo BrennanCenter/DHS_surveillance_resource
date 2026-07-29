@@ -691,7 +691,20 @@ thead th {
 </table>
 
 <script>
+/*
+NOTE FOR EDITORS
 
+This project contains Unicode punctuation (smart quotes, apostrophes,
+en dashes, and em dashes). Copying text through Word, Excel, or CSV
+exports may replace these characters with malformed symbols such as
+�, â€œ, or â€™ if the text is not saved as UTF-8.
+
+When editing source text:
+• Preserve UTF-8 encoding.
+• Avoid re-saving CSVs in a way that changes text encoding.
+• If new malformed characters appear, add an exact repair pair below
+  before the generic fallback replacement.
+*/
 
 let searchFilter = "";
 let searchMatches = [];
