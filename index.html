@@ -1197,6 +1197,7 @@ const REFERENCE_ITALIC_PHRASES =[
   "Tech Behind ICE",
   "Drones for Them but Not for Us?",
   "404 Media",
+  "The Conversation",
   "Wired",
   "The New York Times",
   "Garbage In, Garbage Out: Face Recognition on Flawed Data",
@@ -1539,11 +1540,136 @@ function fetchCSV(file) {
 }
 
 function normalizeText(value) {
-  return String(value || "")
-    /* Repair common quote corruption from CSV exports. */
+  let text = String(value || "");
+
+  const repairPairs = [
+    /* Iris scans */
+    ["ICE”s", "ICE’s"],
+    ["ICE�s", "ICE’s"],
+
+    /* Fingerprints */
+    [
+      'ICE PIA-015(j): Enforcement Integrated Database � EAGLE, EDDIE, and DAVID (May 2019)',
+      'ICE PIA-015(j): Enforcement Integrated Database – EAGLE, EDDIE, and DAVID (May 2019)'
+    ],
+
+    /* IDENT/HART */
+    [
+      'Electronic Frontier Foundation, �HART: Homeland Security�s Massive New Database Will Include Face Recognition, DNA, and Peoples �Non-Obvious Relationships�� (June 2018)',
+      'Electronic Frontier Foundation, “HART: Homeland Security’s Massive New Database Will Include Face Recognition, DNA, and People’s ‘Non-Obvious Relationships’” (June 2018)'
+    ],
+
+    /* Remote acquisition and purchase of cell phone data */
+    [
+      'FedScoop, �ICE Says It�s Stopped Using Commercial Telemetry Data� (January 2024)',
+      'FedScoop, “ICE Says It’s Stopped Using Commercial Telemetry Data” (January 2024)'
+    ],
+    [
+      'ICE legal analysis: Draft Legal Document Discussing ICE�s Use of Geolocation Data (2021)',
+      'ICE legal analysis: Draft Legal Document Discussing ICE’s Use of Geolocation Data (2021)'
+    ],
+
+    /* Other vehicle tracking */
+    [
+      'S&T fact sheet: Project iVe � Vehicle Navigation/Infotainment System Forensics for Law Enforcement (April 2017)',
+      'S&T fact sheet: Project iVe — Vehicle Navigation/Infotainment System Forensics for Law Enforcement (April 2017)'
+    ],
+
+    /* Digital forensics */
+    [
+      'Forbes, �ICE Spent Millions on Phone Hacking Tech, Just in Time for Trump�s Mass Deportation Plans� (November 2024)',
+      'Forbes, “ICE Spent Millions on Phone Hacking Tech, Just in Time for Trump’s Mass Deportation Plans” (November 2024)'
+    ],
+
+    /* Remote hacking */
+    ["anyone”s", "anyone’s"],
+    ["anyone�s", "anyone’s"],
+    [
+      'NPR, �What We Know About How the U.S. Government Uses Spyware (and What We Don�t)� (May 2026)',
+      'NPR, “What We Know About How the U.S. Government Uses Spyware (and What We Don’t)” (May 2026)'
+    ],
+    [
+      'Letter from ICE to Rep. Summer Lee re: ICE�s use of Paragon (April 2026)',
+      'Letter from ICE to Rep. Summer Lee re: ICE’s use of Paragon (April 2026)'
+    ],
+    [
+      'The Citizen Lab, Virtue or Vice? A First Look at Paragon�s Proliferating Spyware Operations (March 2025)',
+      'The Citizen Lab, Virtue or Vice? A First Look at Paragon’s Proliferating Spyware Operations (March 2025)'
+    ],
+
+    /* Social media monitoring */
+    [
+      '404 Media, �The A.I. Surveillance Tool DHS Uses to Detect �Sentiment and Emotion�� (August 2023)',
+      '404 Media, “The A.I. Surveillance Tool DHS Uses to Detect ‘Sentiment and Emotion’” (August 2023)'
+    ],
+    [
+      'The Conversation, �Always Watching: How ICE�s Plan to Monitor Social Media 24/7 Threatens Privacy and Civic Participation� (November 2025)',
+      'The Conversation, “Always Watching: How ICE’s Plan to Monitor Social Media 24/7 Threatens Privacy and Civic Participation” (November 2025)'
+    ],
+
+    /* Skip tracing */
+    [
+      'The Guardian, ��Deplorable�: ICE Hires Firm Accused of Torture to Track Down Undocumented Children� (May 2026)',
+      'The Guardian, “‘Deplorable’: ICE Hires Firm Accused of Torture to Track Down Undocumented Children” (May 2026)'
+    ],
+
+    /* Investigative case management */
+    [
+      'Wired, �ICE Is Using Palantir�s AI Tools to Sort Through Tips� (January 2026)',
+      'Wired, “ICE Is Using Palantir’s AI Tools to Sort Through Tips” (January 2026)'
+    ],
+    [
+      '404 Media, ��ELITE�: The Palantir App ICE Uses to Find Neighborhoods to Raid� (January 2026)',
+      '404 Media, “‘ELITE’: The Palantir App ICE Uses to Find Neighborhoods to Raid” (January 2026)'
+    ],
+    [
+      'The Intercept, �Palantir Provides the Engine for Donald Trump�s Deportation Machine� (March 2017)',
+      'The Intercept, “Palantir Provides the Engine for Donald Trump’s Deportation Machine” (March 2017)'
+    ],
+
+    /* RAVEn */
+    [
+      'Business Insider, �Tech Companies are in a �Frenzy� to Help ICE Build Its Own Data-mining Tool for Targeting Unauthorized Workers� (September 2021)',
+      'Business Insider, “Tech Companies are in a ‘Frenzy’ to Help ICE Build Its Own Data-mining Tool for Targeting Unauthorized Workers” (September 2021)'
+    ],
+
+    /* Project SAFEHAVEN */
+    [
+      'The Lever, �Inside ICE�s $12 Million Plan to Map Immigrants� �Patterns of Life�� (April 2026)',
+      'The Lever, “Inside ICE’s $12 Million Plan to Map Immigrants’ ‘Patterns of Life’” (April 2026)'
+    ],
+
+    /* Other data analysis */
+    [
+      'Financial Times, �Trump�s Immigration Data Dragnet� (December 2025)',
+      'Financial Times, “Trump’s Immigration Data Dragnet” (December 2025)'
+    ],
+    [
+      'Just Futures Law and Mijente, Automating Deportation: The Artificial Intelligence Behind the Department of Homeland Security�s Immigration Enforcement Regime (June 2024)',
+      'Just Futures Law and Mijente, Automating Deportation: The Artificial Intelligence Behind the Department of Homeland Security’s Immigration Enforcement Regime (June 2024)'
+    ],
+    [
+  'collect biometric identifiers � such as fingerprint, iris, and face scans � that DHS can feed into its databases for use during current or future investigations or in immigration benefit adjudications.',
+  'collect biometric identifiers — such as fingerprint, iris, and face scans — that DHS can feed into its databases for use during current or future investigations or in immigration benefit adjudications.'
+]
+  ];
+
+  /* Repair exact known phrases before applying generic replacements. */
+  repairPairs.forEach(([broken, corrected]) => {
+    text = text.split(broken).join(corrected);
+  });
+
+  return text
+    /* Repair recognizable encoding corruption. */
     .replace(/â€œ|â€|“|”/g, '"')
     .replace(/â€˜|â€™|‘|’/g, "'")
+    .replace(/â€“/g, "–")
+    .replace(/â€”/g, "—")
+    .replace(/â€¦/g, "…")
+
+    /* All remaining unknown characters represent double quotation marks. */
     .replace(/�/g, '"')
+
     .trim();
 }
 
@@ -1669,7 +1795,7 @@ descriptions.forEach(item => {
     getCSVValue(item, ["Description"])
   );
 
-  row.descriptionLinks = [1, 2, 3]
+  row.descriptionLinks = [1, 2, 3,4]
     .map(number => ({
       word: normalizeText(
         getCSVValue(item, [
