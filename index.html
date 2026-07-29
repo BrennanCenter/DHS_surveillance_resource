@@ -1661,16 +1661,27 @@ function normalizeText(value) {
       'Just Futures Law and Mijente, Automating Deportation: The Artificial Intelligence Behind the Department of Homeland Security�s Immigration Enforcement Regime (June 2024)',
       'Just Futures Law and Mijente, Automating Deportation: The Artificial Intelligence Behind the Department of Homeland Security’s Immigration Enforcement Regime (June 2024)'
     ],
+
+    /* Integrated biometrics */
     [
-  'collect biometric identifiers � such as fingerprint, iris, and face scans � that DHS can feed into its databases for use during current or future investigations or in immigration benefit adjudications.',
-  'collect biometric identifiers — such as fingerprint, iris, and face scans — that DHS can feed into its databases for use during current or future investigations or in immigration benefit adjudications.'
-]
+      'collect biometric identifiers � such as fingerprint, iris, and face scans � that DHS can feed into its databases for use during current or future investigations or in immigration benefit adjudications.',
+      'collect biometric identifiers — such as fingerprint, iris, and face scans — that DHS can feed into its databases for use during current or future investigations or in immigration benefit adjudications.'
+    ],
+    [
+      '�s ',"’s"
+    ]
   ];
 
   /* Repair exact known phrases before applying generic replacements. */
   repairPairs.forEach(([broken, corrected]) => {
     text = text.split(broken).join(corrected);
   });
+
+  /*
+  Repair possessive apostrophes that became double quotation marks.
+  This only matches "s when followed by whitespace or punctuation.
+  */
+  text = text.replace(/"s(?=[\s,.;:)])/g, "’s");
 
   return text
     /* Repair recognizable encoding corruption. */
